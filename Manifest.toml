@@ -2,13 +2,14 @@
 
 julia_version = "1.12.4"
 manifest_format = "2.0"
-project_hash = "d87fb3203bf7f5184ae00a0f2c6b837691066cf3"
+project_hash = "a92ab8884e4bda479a3953832e8dda5ef4d56358"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.Assignment]]
+deps = ["Revise"]
 path = "."
 uuid = "1181494e-2b5f-4cd1-9eb6-aced1908abbf"
 version = "0.1.0"
