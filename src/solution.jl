@@ -5,19 +5,19 @@ The column indices array is always sorted to make working with it easier.
 """
 struct Solution
     problem::SetPartitioningProblem
-    column_indices::Vector{Int}
+    columns::Vector{Int}
     total_cost::Int
     row_feasibility::Vector{Int}
     feasible::Bool
 end
 
 
-function Solution(problem::SetPartitioningProblem, column_indices::Vector{Int})
-    feasible_rows = vec(sum(problem.partitions[:, column_indices]; dims=2)) - ones(Int, problem.rows)
+function Solution(problem::SetPartitioningProblem, columns::Vector{Int})
+    feasible_rows = vec(sum(problem.partitions[:, columns]; dims=2)) - ones(Int, problem.rows)
     return Solution(
         problem,
-        column_indices,
-        sum(problem.costs[column_indices]),
+        columns,
+        sum(problem.costs[columns]),
         feasible_rows,
         feasible_rows == zeros(Int, problem.rows),
     )

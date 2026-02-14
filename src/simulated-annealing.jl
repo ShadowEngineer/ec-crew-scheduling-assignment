@@ -1,34 +1,3 @@
-"""
-Generates a new "neighbouring" solution, by stochastically adding/removing a column.
-- When adding a column, it will pick one of the existing indices and randomly add a column into the closest nearby space. Which direction closest (left or right), is also random.
-- When removing a column, it randomly picks one of the columns to remove.
-
-Returns a new solution copy, instead of mutating the old one.
-"""
-function generate_sa_neighbour(solution::Solution, rng::Random.AbstractRNG)::Solution
-    must_add = length(solution.column_indices) == 0
-    must_remove = length(solution.column_indices) == solution.problem.columns
-    should_add = rand(rng) >= 0.5
-
-    new_indices = copy(solution.column_indices)
-    if must_add || (!must_remove && should_add)
-        # add a new column
-        if must_add
-            push!(new_indices, rand(rng, 1:solution.problem.columns))
-        else
-            random_index = rand(rng, 1:length(solution.column_indices))
-            index, value = find_free_index(solution.column_indices, random_index; max=solution.problem.columns)
-            insert!(new_indices, index, value)
-        end
-    else
-        # removing a column
-        random_index = rand(rng, 1:length(solution.column_indices))
-        popat!(new_indices, random_index)
-    end
-
-    return Solution(solution.problem, new_indices)
-end
-
 struct SATemperatureConfig
     T0::Int
     alpha::Float64
@@ -67,26 +36,57 @@ sa_probability(settings::SAAlgorithmConfig, solution_fitness, neighbour_fitness,
     exp((solution_fitness - neighbour_fitness) / temperature) :
     settings.P
 
+"""
+Generates a new "neighbouring" solution, by stochastically adding/removing a column.
+- When adding a column, it will pick one of the existing indices and randomly add a column into the closest nearby space. Which direction closest (left or right), is also random.
+- When removing a column, it randomly picks one of the columns to remove.
+
+Returns a new solution copy, instead of mutating the old one.
+"""
+function sa_neighbour(solution::Solution, rng::Random.AbstractRNG)::Solution
+    must_add = length(solution.columns) == 0
+    must_remove = length(solution.columns) == solution.problem.columns
+    should_add = rand(rng) >= 0.5
+
+    new_indices = copy(solution.columns)
+    if must_add || (!must_remove && should_add)
+        # add a new column
+        if must_add
+            push!(new_indices, rand(rng, 1:solution.problem.columns))
+        else
+            random_index = rand(rng, 1:length(solution.columns))
+            index, value = find_free_index(solution.columns, random_index; max=solution.problem.columns)
+            insert!(new_indices, index, value)
+        end
+    else
+        # removing a column
+        random_index = rand(rng, 1:length(solution.columns))
+        popat!(new_indices, random_index)
+    end
+
+    return Solution(solution.problem, new_indices)
+end
+
 function simulated_annealing(
     problem::SetPartitioningProblem;
     rng::Random.AbstractRNG=Random.default_rng(),
-    verbose::Bool=true,
+    verbosity::Int=1,
     settings::SAAlgorithmConfig
 )
-    verbose && println("Running simulated annealing with $settings")
+    verbosity >= 1 && println("Running simulated annealing with $settings")
 
     # normalising all the column costs by the average cost of each column
     normalising_factor = 1.0
     if settings.normalised
         normalising_factor = sum(problem.costs) / problem.columns
-        verbose && println("Normalising factor: $normalising_factor")
+        verbosity >= 1 && println("Normalising factor: $normalising_factor")
     end
 
     solution = generate_solution(problem, UniformlyRandom(rng))
     worst_neighbour_attempts = 0
 
     for iteration in 1:settings.iterations
-        neighbour = generate_sa_neighbour(solution, rng)
+        neighbour = sa_neighbour(solution, rng)
 
         neighbour_fitness = sa_fitness(neighbour; penalty=settings.penalty, normalising_factor)
         solution_fitness = sa_fitness(solution; penalty=settings.penalty, normalising_factor)
@@ -94,7 +94,7 @@ function simulated_annealing(
         temperature = sa_temperature(settings.temperature, iteration)
         escape_probability = sa_probability(settings, solution_fitness, neighbour_fitness, temperature)
 
-        verbose && println("$iteration: $solution_fitness ($(solution.total_cost), $(solution.feasible)) - $worst_neighbour_attempts - $neighbour_fitness - $temperature - $(neighbour_fitness >= solution_fitness ? escape_probability : "none")")
+        verbosity >= 2 && println("$iteration: $solution_fitness ($(solution.total_cost), $(solution.feasible)) - $worst_neighbour_attempts - $neighbour_fitness - $temperature - $(neighbour_fitness >= solution_fitness ? escape_probability : "none") - $(solution.columns)")
 
         if neighbour_fitness < solution_fitness
             solution = neighbour
@@ -106,7 +106,7 @@ function simulated_annealing(
         end
 
         if settings.bailout.enabled && worst_neighbour_attempts > settings.bailout.max_attempts
-            verbose && println("Exceeded worst neighbour attempts $(settings.bailout), bailing early")
+            verbosity >= 1 && println("Exceeded worst neighbour attempts $(settings.bailout), bailing early")
             break
         end
     end
