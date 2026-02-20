@@ -26,8 +26,11 @@ bga_rng = Random.Xoshiro(1234)
 bga_config = Assignment.BGAConfig(;
     rng=bga_rng,
     v=2,
-    epochs=10,
-    P=10,
-    penalty=1000.0
+    epochs=1,
+    population=10,
+    penalty=0.0,
+    selection=Assignment.BGASelectionConfig(;
+        k=2
+    )
 )
 bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
