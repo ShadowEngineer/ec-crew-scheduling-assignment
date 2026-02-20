@@ -10,7 +10,7 @@ struct SABailoutConfig
 end
 SABailoutConfig(; enabled=false, max_attempts=5) = SABailoutConfig(enabled, max_attempts)
 
-struct SAAlgorithmConfig
+struct SAConfig
     iterations::Int
     penalty::Float64
     temperature::SATemperatureConfig
@@ -18,20 +18,20 @@ struct SAAlgorithmConfig
     P::Union{Float64,Nothing}
     normalised::Bool
 end
-SAAlgorithmConfig(;
+SAConfig(;
     iterations=300,
     penalty=1000.0,
     temperature=SATemperatureConfig(),
     bailout=SABailoutConfig(),
     P=nothing,
     normalised=true
-) = SAAlgorithmConfig(iterations, penalty, temperature, bailout, P, normalised)
+) = SAConfig(iterations, penalty, temperature, bailout, P, normalised)
 
 
 sa_fitness(solution::Solution; penalty=0.0, normalising_factor=1.0) =
     solution.total_cost / normalising_factor + sum(abs.(solution.row_feasibility)) * penalty
 sa_temperature(config::SATemperatureConfig, iterations::Int) = config.T0 * config.alpha^iterations
-sa_probability(settings::SAAlgorithmConfig, solution_fitness, neighbour_fitness, temperature) =
+sa_probability(settings::SAConfig, solution_fitness, neighbour_fitness, temperature) =
     isnothing(settings.P) ?
     exp((solution_fitness - neighbour_fitness) / temperature) :
     settings.P
@@ -71,7 +71,7 @@ function simulated_annealing(
     problem::SetPartitioningProblem;
     rng::Random.AbstractRNG=Random.default_rng(),
     verbosity::Int=1,
-    settings::SAAlgorithmConfig
+    settings::SAConfig
 )
     verbosity >= 1 && println("Running simulated annealing with $settings")
 
@@ -96,17 +96,15 @@ function simulated_annealing(
 
         verbosity >= 2 && println("$iteration: $solution_fitness ($(solution.total_cost), $(solution.feasible)) - $worst_neighbour_attempts - $neighbour_fitness - $temperature - $(neighbour_fitness >= solution_fitness ? escape_probability : "none") - $(solution.columns)")
 
-        if neighbour_fitness < solution_fitness
+        if neighbour_fitness < solution_fitness || rand(rng) <= escape_probability
             solution = neighbour
             worst_neighbour_attempts = 0
-        elseif rand(rng) <= escape_probability
-            solution = neighbour
         else
             worst_neighbour_attempts += 1
         end
 
         if settings.bailout.enabled && worst_neighbour_attempts > settings.bailout.max_attempts
-            verbosity >= 1 && println("Exceeded worst neighbour attempts $(settings.bailout), bailing early")
+            verbosity >= 1 && println("Exceeded neighbour jump attempts $(settings.bailout.max_attempts), bailing")
             break
         end
     end

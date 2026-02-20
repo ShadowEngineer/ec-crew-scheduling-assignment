@@ -4,9 +4,9 @@ using Assignment
 problem1 = Assignment.read_data_file("data/sppnw41.txt")
 
 # simulated annealing
-generator = Random.Xoshiro(1234)
+sa_generator = Random.Xoshiro(1234)
 
-sa_config = Assignment.SAAlgorithmConfig(;
+sa_config = Assignment.SAConfig(;
     iterations=10000,
     penalty=5.0,
     temperature=Assignment.SATemperatureConfig(
@@ -19,4 +19,15 @@ sa_config = Assignment.SAAlgorithmConfig(;
     ),
     normalised=true
 )
-sa_solution = Assignment.simulated_annealing(problem1; rng=generator, settings=sa_config, verbosity=1)
+# sa_solution = Assignment.simulated_annealing(problem1; rng=sa_generator, settings=sa_config, verbosity=1)
+
+# binary genetic algorithm
+bga_rng = Random.Xoshiro(1234)
+bga_config = Assignment.BGAConfig(;
+    rng=bga_rng,
+    v=2,
+    epochs=10,
+    P=10,
+    penalty=1000.0
+)
+bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)

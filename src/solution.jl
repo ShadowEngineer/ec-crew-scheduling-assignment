@@ -13,6 +13,7 @@ end
 
 
 function Solution(problem::SetPartitioningProblem, columns::Vector{Int})
+    @assert issorted(columns) "columns must be sorted!"
     feasible_rows = vec(sum(problem.partitions[:, columns]; dims=2)) - ones(Int, problem.rows)
     return Solution(
         problem,
@@ -39,4 +40,11 @@ function generate_solution(problem::SetPartitioningProblem, mechanism::Uniformly
     rng = mechanism.rng
     cols = problem.columns
     return Solution(problem, sort(randperm(rng, cols)[1:rand(rng, 1:cols)]))
+end
+
+function Base.show(io::Core.IO, solution::Solution)
+    print(
+        io,
+        "Solution(\"$(solution.problem.name)\", $(solution.total_cost), $(solution.feasible), $(solution.columns))"
+    )
 end
