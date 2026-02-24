@@ -4,9 +4,10 @@ A binary genotype that represents the solution as a bitstring, `genotype`.
 The bitstring can be manipulated after encoding with `encode` (conceptually a constructor of this struct)
 and a new solution returned back after decoding with `decode`.
 """
-struct BinaryGenotypeSolution
+mutable struct BinaryGenotypeSolution
     solution::Solution
     bitstring::BitVector
+    fitness::Float64
 end
 
 Base.show(io::IO, genotype::BinaryGenotypeSolution) = print(io, map(x -> x ? "1" : "0", genotype.bitstring) |> join)
@@ -20,7 +21,8 @@ function encode(solution::Solution)::BinaryGenotypeSolution
 
     return BinaryGenotypeSolution(
         solution,
-        BitVector(zeroArray)
+        BitVector(zeroArray),
+        0.0
     )
 end
 
@@ -35,5 +37,5 @@ decode(genotype::BinaryGenotypeSolution)::Solution = Solution(
 
 # a useful constructor for a new solution, given just the bitstring
 function BinaryGenotypeSolution(problem::SetPartitioningProblem, bitstring::BitVector)
-    return BinaryGenotypeSolution(Solution(problem, decode_bitstring_into_columns(bitstring)), bitstring)
+    return BinaryGenotypeSolution(Solution(problem, decode_bitstring_into_columns(bitstring)), bitstring, 0.0)
 end

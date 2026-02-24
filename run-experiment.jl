@@ -28,10 +28,10 @@ bga_config = Assignment.BGAConfig(;
     v=1,
     epochs=1000,
     population=50,
-    penalty=1000.0,
+    penalty=10000.0,
     selection=Assignment.BGASelectionConfig(;
         k=2
     ),
-    reproduction=Assignment.BGAGenerationalReproduction()
+    reproduction=Assignment.BGACombinedReproduction()
 )
 bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)

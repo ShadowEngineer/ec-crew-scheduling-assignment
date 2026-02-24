@@ -1,35 +1,35 @@
 include("bga/genotype.jl")
-include("bga/population.jl")
 include("bga/reproduction.jl")
 include("bga/selection.jl")
 include("bga/config.jl")
+include("bga/population.jl")
 include("bga/simulation.jl")
 
-function bga_reproduction!(
-    offspring::BGAPopulation,
-    sim::BGASimulation,
-    ::BGAGenerationalReproduction
-)
-    sim.population = offspring
+function bga_reproduction!(sim::BGASimulation, ::BGAGenerationalReproduction)
+    sim.population = sim.offspring
 end
 
-function bga_reproduction!(
-    offspring::BGAPopulation,
-    sim::BGASimulation,
-    steady_state::BGASteadyStateReproduction
-)
-    combined = parents + offspring
+function bga_reproduction!(sim::BGASimulation, ::BGACombinedReproduction)
+    @assert !isnothing(sim.offspring) "offspring must be defined for reproduction to occur"
+    combined = sim.population + sim.offspring
+    sort!(combined.solutions; by=x -> x.fitness)
+    combined.solutions = combined.solutions[1:sim.config.population]
+
+    sim.population = combined
 end
 
-function bga_reproduction!(offspring::BGAPopulation, sim::BGASimulation)
-    bga_reproduction!(offspring, sim, sim.config.reproduction)
-end
+bga_reproduction!(sim::BGASimulation) = bga_reproduction!(sim, sim.config.reproduction)
 
 
 function bga_fitness!(sim::BGASimulation)
-    population = sim.population
-    config = sim.config
-    population.fitness = [sa_fitness(solution.solution; penalty=config.penalty) for solution in population.solutions]
+    for solution in sim.population.solutions
+        solution.fitness = sa_fitness(solution.solution; penalty=sim.config.penalty)
+    end
+
+    isnothing(sim.offspring) && return
+    for solution in sim.offspring.solutions
+        solution.fitness = sa_fitness(solution.solution; penalty=sim.config.penalty)
+    end
 end
 
 """
@@ -45,10 +45,10 @@ function bga_selection(sim::BGASimulation)::Vector{Tuple{Int,Int}}
 
     for pair_index in 1:population_size
         indices = randperm(rng, population_size)[1:k]
-        P1 = sort!(indices; by=index -> sim.population.fitness[index])[1]
+        P1 = sort!(indices; by=index -> sim.population.solutions[index].fitness)[1]
 
         indices = filter!(i -> i != P1, randperm(rng, population_size))[1:k]
-        P2 = sort!(indices; by=index -> sim.population.fitness[index])[1]
+        P2 = sort!(indices; by=index -> sim.population.solutions[index].fitness)[1]
         parents[pair_index] = (P1, P2)
     end
 
@@ -59,7 +59,7 @@ end
 Creates a new (conceptually and in memory) population of children from the parent indices.
 Uniform crossover implementation.
 """
-function bga_crossover(parents::Vector{Tuple{Int,Int}}, sim::BGASimulation)::BGAPopulation
+function bga_crossover!(parents::Vector{Tuple{Int,Int}}, sim::BGASimulation)
     new_solutions::Vector{BinaryGenotypeSolution} = []
 
     for parent_pair in parents
@@ -70,7 +70,7 @@ function bga_crossover(parents::Vector{Tuple{Int,Int}}, sim::BGASimulation)::BGA
         push!(new_solutions, BinaryGenotypeSolution(sim.problem, child))
     end
 
-    return BGAPopulation(new_solutions)
+    sim.offspring = BGAPopulation(new_solutions)
 end
 
 function bga_mutation!(genotype::BinaryGenotypeSolution, sim::BGASimulation)
@@ -78,8 +78,10 @@ function bga_mutation!(genotype::BinaryGenotypeSolution, sim::BGASimulation)
     genotype.bitstring .⊻= rand(sim.config.rng, sim.problem.columns) .<= mutation_rate
 end
 
-function bga_mutation!(offspring::BGAPopulation, sim::BGASimulation)
-    for genotype in offspring.solutions
+function bga_mutation!(sim::BGASimulation)
+    @assert !isnothing(sim.offspring) "sim.offspring does not exist"
+
+    for genotype in sim.offspring.solutions
         bga_mutation!(genotype, sim)
     end
 end
@@ -92,24 +94,23 @@ function binary_genetic_algorithm(
     config.verbosity >= 1 && println("generating initial solutions...")
     population = bga_initial_population(problem, config)
 
-    sim = BGASimulation(problem, config, population)
+    sim = BGASimulation(problem, config, population, nothing)
     bga_fitness!(sim)
 
     for epoch in 1:sim.config.epochs
         sim.config.verbosity >= 2 && println("Epoch-$epoch\tPopulation\n$(population)")
 
-        # selection
         parents = bga_selection(sim)
 
-        # crossover to generate new children
-        offspring = bga_crossover(parents, sim)
-
-        # mutation
-        bga_mutation!(offspring, sim)
+        # variation operators
+        bga_crossover!(parents, sim)
+        bga_mutation!(sim)
 
         # reproduction
-        bga_reproduction!(offspring, sim)
         bga_fitness!(sim)
+        bga_reproduction!(sim)
+
+        sim.offspring = nothing
     end
 
     config.verbosity >= 1 && println("Final\tPopulation\n$(sim.population)")
