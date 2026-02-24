@@ -25,10 +25,10 @@ sa_config = Assignment.SAConfig(;
 bga_rng = Random.Xoshiro(1234)
 bga_config = Assignment.BGAConfig(;
     rng=bga_rng,
-    v=2,
-    epochs=1,
-    population=10,
-    penalty=0.0,
+    v=1,
+    epochs=1000,
+    population=50,
+    penalty=1000.0,
     selection=Assignment.BGASelectionConfig(;
         k=2
     )

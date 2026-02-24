@@ -50,10 +50,10 @@ function bga_select_parents(population::BGAPopulation, config::BGAConfig)::Vecto
     parents = Vector{Tuple{Int,Int}}(undef, config.population)
     for pair_index in 1:config.population
         indices = randperm(config.rng, config.population)[1:config.selection.k]
-        P1 = sort!(indices; by=index -> population.fitness[index], rev=true)[1]
+        P1 = sort!(indices; by=index -> population.fitness[index])[1]
 
         indices = filter!(i -> i != P1, randperm(config.rng, config.population))[1:config.selection.k]
-        P2 = sort!(indices; by=index -> population.fitness[index], rev=true)[1]
+        P2 = sort!(indices; by=index -> population.fitness[index])[1]
         parents[pair_index] = (P1, P2)
     end
     return parents
@@ -64,21 +64,41 @@ Creates a new (conceptually and in memory) population of children from the paren
 Uniform crossover implementation.
 """
 function bga_crossover(parents::Vector{Tuple{Int,Int}}, population::BGAPopulation, config::BGAConfig)::BGAPopulation
-    new_solutions::Vector{} = []
-    for parent_pair in parents
-        # TODO make the number of columns easier to access
-        # from some kind of "simulation snapshot" struct that combines config and problem
-        gene_inheritance = rand(config.rng, length(population.solutions[1].bitstring))
+    # TODO make the number of columns easier to access
+    # from some kind of "simulation snapshot" struct that combines config and problem
+    bitstring_length = length(population.solutions[1].bitstring)
+    problem = population.solutions[1].solution.problem
 
+    new_solutions::Vector{BinaryGenotypeSolution} = []
+    for parent_pair in parents
+        inheritance_mask = BitVector(map(round, rand(config.rng, bitstring_length)))
+        parent1 = population.solutions[parent_pair[1]].bitstring
+        parent2 = population.solutions[parent_pair[2]].bitstring
+        child = (parent1 .& inheritance_mask) .| (parent2 .& .!inheritance_mask)
+        push!(new_solutions, BinaryGenotypeSolution(problem, child))
     end
+
     return BGAPopulation(new_solutions)
+end
+
+function bga_mutation!(genotype::BinaryGenotypeSolution, config::BGAConfig)
+    bitstring_length = length(genotype.bitstring)
+    mutation_rate = 1 / bitstring_length
+    genotype.bitstring .⊻= rand(config.rng, bitstring_length) .<= mutation_rate
+end
+
+function bga_mutation!(population::BGAPopulation, config::BGAConfig)
+    for genotype in population.solutions
+        bga_mutation!(genotype, config)
+    end
 end
 
 function binary_genetic_algorithm(
     problem::SetPartitioningProblem;
     config::BGAConfig
 )
-    config.verbosity >= 2 && println("generating initial solutions...")
+    config.verbosity >= 1 && println("running for $(config.epochs) epochs...")
+    config.verbosity >= 1 && println("generating initial solutions...")
     population = bga_initial_population(problem, config)
     population.fitness = bga_fitness(population, config)
 
@@ -87,37 +107,19 @@ function binary_genetic_algorithm(
 
         # selection
         parents = bga_select_parents(population, config)
-        println(parents)
 
         # crossover to generate new children
         children = bga_crossover(parents, population, config)
-        println(children)
+
+        # mutation
+        bga_mutation!(children, config)
+
+        # reproduction
+        population = children
+        population.fitness = bga_fitness(population, config)
     end
-end
 
-#=
-local epochs = {}
-generations[0] = generate_initial_population()
-local epoch = 0
-local fitness = evaluate_fitness(generations[0])
-while termination_flag == false
-	-- selection phase
-	local parents = select_best_parents(generations[epoch])
-	-- variation phase
-	local new_candidates = variation_operators(parents)
-	-- fitness phase
-	local new_fitness = evaluate_fitness(new_candidates)
-	local fitness = table.join(fitness, new_fitness)
-	-- reproduction phase
-	generations[epoch + 1] = reproduce(
-		table.join(generations[epoch], new_candidates),
-		fitness
-	)
-
-	epoch = epoch + 1
-	if should_terminate() then
-		termination_flag = true
-	end
+    config.verbosity >= 1 && println("Final\tPopulation\n$(population)")
+    solutions = sort!([decode(genotype) for genotype in population.solutions]; by=sol -> sol.total_cost)
+    println(solutions)
 end
-print(find_best(epochs))
-=#

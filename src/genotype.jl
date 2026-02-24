@@ -24,7 +24,16 @@ function encode(solution::Solution)::BinaryGenotypeSolution
     )
 end
 
+function decode_bitstring_into_columns(bitstring::BitVector)
+    return map(bit -> bit[2] ? bit[1] : 0, collect(enumerate(bitstring))) |> filter(x -> x > 0)
+end
+
 decode(genotype::BinaryGenotypeSolution)::Solution = Solution(
     genotype.solution.problem,
-    map(bit -> bit[2] ? bit[1] : 0, collect(enumerate(genotype.bitstring))) |> filter(x -> x > 0)
+    decode_bitstring_into_columns(genotype.bitstring)
 )
+
+# a useful constructor for a new solution, given just the bitstring
+function BinaryGenotypeSolution(problem::SetPartitioningProblem, bitstring::BitVector)
+    return BinaryGenotypeSolution(Solution(problem, decode_bitstring_into_columns(bitstring)), bitstring)
+end

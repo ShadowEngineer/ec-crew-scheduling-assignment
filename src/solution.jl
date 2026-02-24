@@ -11,7 +11,6 @@ struct Solution
     feasible::Bool
 end
 
-
 function Solution(problem::SetPartitioningProblem, columns::Vector{Int})
     @assert issorted(columns) "columns must be sorted!"
     feasible_rows = vec(sum(problem.partitions[:, columns]; dims=2)) - ones(Int, problem.rows)
@@ -47,4 +46,8 @@ function Base.show(io::Core.IO, solution::Solution)
         io,
         "Solution(\"$(solution.problem.name)\", $(solution.total_cost), $(solution.feasible), $(solution.columns))"
     )
+end
+
+function Base.show(io::Core.IO, solution::Vector{Solution})
+    print(io, join(solution, "\n"))
 end
