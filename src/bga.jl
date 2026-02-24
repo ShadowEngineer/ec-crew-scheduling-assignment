@@ -1,48 +1,9 @@
-include("genotype.jl")
-
-mutable struct BGAPopulation
-    solutions::Vector{BinaryGenotypeSolution}
-    fitness::Vector{Float64}
-end
-BGAPopulation(solutions::Vector{BinaryGenotypeSolution}) = BGAPopulation(solutions, zeros(length(solutions)))
-Base.show(io::IO, population::BGAPopulation) = print(
-    io,
-    join(["[$i] $(population.fitness[i]): \t$(population.solutions[i])" for i in 1:length(population.solutions)], "\n")
-)
-
-function bga_initial_population(problem::SetPartitioningProblem, config::BGAConfig)::BGAPopulation
-    return BGAPopulation(
-        [generate_solution(problem, UniformlyRandom(config.rng)) |> encode for _ in 1:config.population]
-    )
-end
-
-include("reproduction.jl")
-
-struct BGASelectionConfig
-    k::Int
-end
-BGASelectionConfig(; k::Int=2) = BGASelectionConfig(k)
-struct BGAConfig
-    rng::Random.AbstractRNG
-    verbosity::Int
-
-    epochs::Int
-    population::Int
-    penalty::Float64
-    selection::BGASelectionConfig
-    reproduction::BGAReproductionScheme
-end
-BGAConfig(;
-    rng::Random.AbstractRNG=Random.default_rng(),
-    v::Int=1,
-    epochs::Int=10,
-    population::Int=10,
-    penalty::Float64=1000.0,
-    selection::BGASelectionConfig=BGASelectionConfig(),
-    reproduction::BGAReproductionScheme
-) = BGAConfig(rng, v, epochs, population, penalty, selection, reproduction)
-
-include("simulation.jl")
+include("bga/genotype.jl")
+include("bga/population.jl")
+include("bga/reproduction.jl")
+include("bga/selection.jl")
+include("bga/config.jl")
+include("bga/simulation.jl")
 
 function bga_reproduction!(
     offspring::BGAPopulation,
