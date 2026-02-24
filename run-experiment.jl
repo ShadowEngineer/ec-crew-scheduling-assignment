@@ -31,6 +31,7 @@ bga_config = Assignment.BGAConfig(;
     penalty=1000.0,
     selection=Assignment.BGASelectionConfig(;
         k=2
-    )
+    ),
+    reproduction=Assignment.BGAGenerationalReproduction()
 )
 bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
