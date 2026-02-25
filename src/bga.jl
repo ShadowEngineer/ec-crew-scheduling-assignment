@@ -1,9 +1,6 @@
 include("bga/genotype.jl")
-include("bga/reproduction.jl")
-include("bga/selection.jl")
-include("bga/config.jl")
-include("bga/population.jl")
-include("bga/simulation.jl")
+include("bga/types.jl")
+include("bga/improvements.jl")
 
 function bga_reproduction!(sim::BGASimulation, ::BGAGenerationalReproduction)
     sim.population = sim.offspring

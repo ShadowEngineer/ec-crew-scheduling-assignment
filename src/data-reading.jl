@@ -52,3 +52,8 @@ function read_data_file(filepath::String)::SetPartitioningProblem
     end
     return SetPartitioningProblem(filepath, rows, columns, costs, matrix)
 end
+
+function Base.show(io::IO, problem::SetPartitioningProblem)
+    matrix = join([join(problem.partitions[i, :]) for i in 1:problem.rows], "\n")
+    print(io, "$(problem.rows)x$(problem.columns) SetPartitioningProblem($(problem.name))\n$(matrix)")
+end

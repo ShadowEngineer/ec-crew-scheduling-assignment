@@ -1,5 +1,5 @@
 """
-A binary genotype that represents the solution as a bitstring, `genotype`.
+A binary genotype that represents the solution as a bitstring.
 
 The bitstring can be manipulated after encoding with `encode` (conceptually a constructor of this struct)
 and a new solution returned back after decoding with `decode`.
