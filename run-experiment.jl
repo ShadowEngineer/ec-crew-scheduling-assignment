@@ -34,4 +34,18 @@ bga_config = Assignment.BGAConfig(;
     ),
     reproduction=Assignment.BGACombinedReproduction()
 )
-bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
+# bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
+
+# improved binary genetic algorithm
+bga_improved_rng = Random.Xoshiro(1234)
+bga_improved_config = Assignment.BGAConfig(;
+    rng=bga_improved_rng,
+    v=bga_config.verbosity,
+    epochs=bga_config.epochs,
+    population=bga_config.population,
+    penalty=bga_config.penalty,
+    initialisation=Assignment.BGAPseudoRandomInitialisation(),
+    selection=bga_config.selection,
+    reproduction=bga_config.reproduction
+)
+bga_improved_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_improved_config)

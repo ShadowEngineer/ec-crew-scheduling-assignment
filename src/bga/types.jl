@@ -2,7 +2,7 @@
 abstract type BGAInitialisationScheme end
 
 struct BGAUniformlyRandomInitialisation <: BGAInitialisationScheme end
-struct BGAPseudoRandomInitialisation <: BGAPseudoRandomInitialisation end
+struct BGAPseudoRandomInitialisation <: BGAInitialisationScheme end
 
 # selection
 struct BGASelectionConfig
@@ -24,6 +24,7 @@ struct BGAConfig
     epochs::Int
     population::Int
     penalty::Float64
+    initialisation::BGAInitialisationScheme
     selection::BGASelectionConfig
     reproduction::BGAReproductionScheme
 end
@@ -33,9 +34,10 @@ BGAConfig(;
     epochs::Int=10,
     population::Int=10,
     penalty::Float64=1000.0,
+    initialisation::BGAInitialisationScheme=BGAUniformlyRandomInitialisation(),
     selection::BGASelectionConfig=BGASelectionConfig(),
     reproduction::BGAReproductionScheme
-) = BGAConfig(rng, v, epochs, population, penalty, selection, reproduction)
+) = BGAConfig(rng, v, epochs, population, penalty, initialisation, selection, reproduction)
 
 # population
 mutable struct BGAPopulation
@@ -52,17 +54,17 @@ Base.show(io::IO, population::BGAPopulation) = print(
         "\n"
     )
 )
-
-function bga_initial_population(problem::SetPartitioningProblem, config::BGAConfig)::BGAPopulation
-    return BGAPopulation(
-        [generate_solution(problem, UniformlyRandom(config.rng)) |> encode for _ in 1:config.population]
-    )
-end
-
 # simulation
 mutable struct BGASimulation
     problem::SetPartitioningProblem
     config::BGAConfig
-    population::BGAPopulation
+    population::Union{BGAPopulation,Nothing}
     offspring::Union{BGAPopulation,Nothing}
+end
+
+# initialisation
+function bga_initial_population!(sim::BGASimulation, ::BGAUniformlyRandomInitialisation)
+    sim.population = BGAPopulation(
+        [generate_solution(sim.problem, UniformlyRandom(sim.config.rng)) |> encode for _ in 1:sim.config.population]
+    )
 end

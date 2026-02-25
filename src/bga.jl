@@ -88,14 +88,17 @@ function binary_genetic_algorithm(
     config::BGAConfig
 )
     config.verbosity >= 1 && println("running for $(config.epochs) epochs...")
-    config.verbosity >= 1 && println("generating initial solutions...")
-    population = bga_initial_population(problem, config)
 
-    sim = BGASimulation(problem, config, population, nothing)
+    sim = BGASimulation(problem, config, nothing, nothing)
+
+    config.verbosity >= 1 && println("generating initial solutions...")
+    bga_initial_population!(sim, sim.config.initialisation)
     bga_fitness!(sim)
 
+    config.verbosity >= 2 && println("initial solutions\n$(sim.population)")
+
     for epoch in 1:sim.config.epochs
-        sim.config.verbosity >= 2 && println("Epoch-$epoch\tPopulation\n$(population)")
+        sim.config.verbosity >= 3 && println("Epoch-$epoch\tPopulation\n$(sim.population)")
 
         parents = bga_selection(sim)
 
