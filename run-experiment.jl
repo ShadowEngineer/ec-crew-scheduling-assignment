@@ -22,19 +22,24 @@ sa_config = Assignment.SAConfig(;
 # sa_solution = Assignment.simulated_annealing(problem1; rng=sa_generator, settings=sa_config, verbosity=1)
 
 # binary genetic algorithm
+mu = 50
+lambda = mu
+# lambda = mu * 2
 bga_rng = Random.Xoshiro(1234)
 bga_config = Assignment.BGAConfig(;
     rng=bga_rng,
     v=1,
     epochs=1000,
-    population=50,
+    mu=mu,
+    lambda=lambda,
     penalty=10000.0,
+    initialisation=Assignment.BGAUniformlyRandomInitialisation(),
     selection=Assignment.BGASelectionConfig(;
         k=2
     ),
     reproduction=Assignment.BGACombinedReproduction()
 )
-# bga_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
+# bga_sim = Assignment.binary_genetic_algorithm(problem1; config=bga_config)
 
 # improved binary genetic algorithm
 bga_improved_rng = Random.Xoshiro(1234)
@@ -42,10 +47,17 @@ bga_improved_config = Assignment.BGAConfig(;
     rng=bga_improved_rng,
     v=bga_config.verbosity,
     epochs=bga_config.epochs,
-    population=bga_config.population,
+    mu=mu,
+    lambda=lambda,
     penalty=bga_config.penalty,
     initialisation=Assignment.BGAPseudoRandomInitialisation(),
     selection=bga_config.selection,
     reproduction=bga_config.reproduction
+    # reproduction=Assignment.BGAStochasticRankingReproduction(;
+    #     N=lambda,
+    #     P_f=0.5
+    # )
 )
-bga_improved_solution = Assignment.binary_genetic_algorithm(problem1; config=bga_improved_config)
+bga_improved_sim = Assignment.binary_genetic_algorithm(problem1; config=bga_improved_config)
+
+println("Finished!")

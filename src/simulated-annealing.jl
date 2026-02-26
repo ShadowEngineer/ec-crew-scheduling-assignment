@@ -28,8 +28,9 @@ SAConfig(;
 ) = SAConfig(iterations, penalty, temperature, bailout, P, normalised)
 
 
+sa_penalty(solution::Solution; penalty=0.0) = sum(abs.(solution.row_feasibility)) * penalty
 sa_fitness(solution::Solution; penalty=0.0, normalising_factor=1.0) =
-    solution.total_cost / normalising_factor + sum(abs.(solution.row_feasibility)) * penalty
+    solution.total_cost / normalising_factor + sa_penalty(solution; penalty)
 sa_temperature(config::SATemperatureConfig, iterations::Int) = config.T0 * config.alpha^iterations
 sa_probability(settings::SAConfig, solution_fitness, neighbour_fitness, temperature) =
     isnothing(settings.P) ?

@@ -3,29 +3,29 @@ include("bga/types.jl")
 include("bga/improvements.jl")
 
 function bga_reproduction!(sim::BGASimulation, ::BGAGenerationalReproduction)
+    @assert sim.config.population == sim.config.offspring "cannot produce a new generation of different size"
     sim.population = sim.offspring
 end
 
 function bga_reproduction!(sim::BGASimulation, ::BGACombinedReproduction)
-    @assert !isnothing(sim.offspring) "offspring must be defined for reproduction to occur"
     combined = sim.population + sim.offspring
-    sort!(combined.solutions; by=x -> x.fitness)
+    sort!(combined.solutions; by=x -> x.fitness + x.penalty)
     combined.solutions = combined.solutions[1:sim.config.population]
 
     sim.population = combined
 end
 
-bga_reproduction!(sim::BGASimulation) = bga_reproduction!(sim, sim.config.reproduction)
-
 
 function bga_fitness!(sim::BGASimulation)
-    for solution in sim.population.solutions
-        solution.fitness = sa_fitness(solution.solution; penalty=sim.config.penalty)
+    for genotype in sim.population.solutions
+        genotype.fitness = sa_fitness(genotype.solution)
+        genotype.penalty = sa_penalty(genotype.solution; penalty=sim.config.penalty)
     end
 
     isnothing(sim.offspring) && return
-    for solution in sim.offspring.solutions
-        solution.fitness = sa_fitness(solution.solution; penalty=sim.config.penalty)
+    for genotype in sim.offspring.solutions
+        genotype.fitness = sa_fitness(genotype.solution)
+        genotype.penalty = sa_penalty(genotype.solution; penalty=sim.config.penalty)
     end
 end
 
@@ -34,18 +34,24 @@ Returns a vector of tuples that contain the indices into the population for sele
 """
 function bga_selection(sim::BGASimulation)::Vector{Tuple{Int,Int}}
     # deterministic binary tournament selection scheme implementation
-    population_size = sim.config.population
+    parent_pairs = sim.config.offspring # lambda
     rng = sim.config.rng
     k = sim.config.selection.k
 
-    parents = Vector{Tuple{Int,Int}}(undef, population_size)
+    parents = Vector{Tuple{Int,Int}}(undef, parent_pairs)
 
-    for pair_index in 1:population_size
-        indices = randperm(rng, population_size)[1:k]
-        P1 = sort!(indices; by=index -> sim.population.solutions[index].fitness)[1]
+    for pair_index in 1:parent_pairs
+        indices = randperm(rng, parent_pairs)[1:k]
+        P1 = sort!(
+            indices;
+            by=index -> sim.population.solutions[index].fitness + sim.population.solutions[index].penalty
+        )[1]
 
-        indices = filter!(i -> i != P1, randperm(rng, population_size))[1:k]
-        P2 = sort!(indices; by=index -> sim.population.solutions[index].fitness)[1]
+        indices = filter!(i -> i != P1, randperm(rng, parent_pairs))[1:k]
+        P2 = sort!(
+            indices;
+            by=index -> sim.population.solutions[index].fitness + sim.population.solutions[index].penalty
+        )[1]
         parents[pair_index] = (P1, P2)
     end
 
@@ -73,6 +79,9 @@ end
 function bga_mutation!(genotype::BinaryGenotypeSolution, sim::BGASimulation)
     mutation_rate = 1 / sim.problem.columns
     genotype.bitstring .⊻= rand(sim.config.rng, sim.problem.columns) .<= mutation_rate
+
+    # have to update the solution in the genotype for fitness/penalty calculations to be correct
+    genotype.solution = decode(genotype)
 end
 
 function bga_mutation!(sim::BGASimulation)
@@ -107,8 +116,9 @@ function binary_genetic_algorithm(
         bga_mutation!(sim)
 
         # reproduction
+        @assert !isnothing(sim.offspring) "offspring must be defined for reproduction to occur"
         bga_fitness!(sim)
-        bga_reproduction!(sim)
+        bga_reproduction!(sim, sim.config.reproduction)
 
         sim.offspring = nothing
     end
@@ -116,4 +126,6 @@ function binary_genetic_algorithm(
     config.verbosity >= 1 && println("Final\tPopulation\n$(sim.population)")
     solutions = sort!([decode(genotype) for genotype in sim.population.solutions]; by=sol -> sol.total_cost)
     println(solutions)
+
+    return sim
 end

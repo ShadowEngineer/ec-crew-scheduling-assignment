@@ -8,6 +8,7 @@ mutable struct BinaryGenotypeSolution
     solution::Solution
     bitstring::BitVector
     fitness::Float64
+    penalty::Float64
 end
 
 Base.show(io::IO, genotype::BinaryGenotypeSolution) = print(io, map(x -> x ? "1" : "0", genotype.bitstring) |> join)
@@ -22,6 +23,7 @@ function encode(solution::Solution)::BinaryGenotypeSolution
     return BinaryGenotypeSolution(
         solution,
         BitVector(zeroArray),
+        0.0,
         0.0
     )
 end
@@ -37,5 +39,5 @@ decode(genotype::BinaryGenotypeSolution)::Solution = Solution(
 
 # a useful constructor for a new solution, given just the bitstring
 function BinaryGenotypeSolution(problem::SetPartitioningProblem, bitstring::BitVector)
-    return BinaryGenotypeSolution(Solution(problem, decode_bitstring_into_columns(bitstring)), bitstring, 0.0)
+    return BinaryGenotypeSolution(Solution(problem, decode_bitstring_into_columns(bitstring)), bitstring, 0.0, 0.0)
 end

@@ -15,6 +15,11 @@ abstract type BGAReproductionScheme end
 
 struct BGAGenerationalReproduction <: BGAReproductionScheme end
 struct BGACombinedReproduction <: BGAReproductionScheme end
+struct BGAStochasticRankingReproduction <: BGAReproductionScheme
+    number_of_sweeps::Int
+    fitness_probability::Float64
+end
+BGAStochasticRankingReproduction(; N::Int, P_f::Float64) = BGAStochasticRankingReproduction(N, P_f)
 
 # config
 struct BGAConfig
@@ -23,6 +28,7 @@ struct BGAConfig
 
     epochs::Int
     population::Int
+    offspring::Int
     penalty::Float64
     initialisation::BGAInitialisationScheme
     selection::BGASelectionConfig
@@ -32,12 +38,13 @@ BGAConfig(;
     rng::Random.AbstractRNG=Random.default_rng(),
     v::Int=1,
     epochs::Int=10,
-    population::Int=10,
+    mu::Int=10,
+    lambda::Int=10,
     penalty::Float64=1000.0,
     initialisation::BGAInitialisationScheme=BGAUniformlyRandomInitialisation(),
     selection::BGASelectionConfig=BGASelectionConfig(),
     reproduction::BGAReproductionScheme
-) = BGAConfig(rng, v, epochs, population, penalty, initialisation, selection, reproduction)
+) = BGAConfig(rng, v, epochs, mu, lambda, penalty, initialisation, selection, reproduction)
 
 # population
 mutable struct BGAPopulation
@@ -48,7 +55,7 @@ Base.show(io::IO, population::BGAPopulation) = print(
     io,
     join(
         [
-            "[$i] $(population.solutions[i].fitness): \t$(population.solutions[i])"
+            "[$i] $(population.solutions[i].fitness) ($(population.solutions[i].penalty)): \t$(population.solutions[i])"
             for i in 1:length(population.solutions)
         ],
         "\n"
