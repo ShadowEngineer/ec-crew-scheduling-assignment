@@ -23,8 +23,7 @@ sa_config = Assignment.SAConfig(;
 
 # binary genetic algorithm
 mu = 50
-lambda = mu
-# lambda = mu * 2
+lambda = mu * 2
 bga_rng = Random.Xoshiro(1234)
 bga_config = Assignment.BGAConfig(;
     rng=bga_rng,
@@ -52,11 +51,10 @@ bga_improved_config = Assignment.BGAConfig(;
     penalty=bga_config.penalty,
     initialisation=Assignment.BGAPseudoRandomInitialisation(),
     selection=bga_config.selection,
-    reproduction=bga_config.reproduction
-    # reproduction=Assignment.BGAStochasticRankingReproduction(;
-    #     N=lambda,
-    #     P_f=0.5
-    # )
+    reproduction=Assignment.BGAStochasticRankingReproduction(;
+        N=lambda,
+        P_f=0.5
+    )
 )
 bga_improved_sim = Assignment.binary_genetic_algorithm(problem1; config=bga_improved_config)
 

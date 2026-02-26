@@ -34,24 +34,20 @@ Returns a vector of tuples that contain the indices into the population for sele
 """
 function bga_selection(sim::BGASimulation)::Vector{Tuple{Int,Int}}
     # deterministic binary tournament selection scheme implementation
-    parent_pairs = sim.config.offspring # lambda
+    μ = sim.config.population
+    λ = sim.config.offspring
     rng = sim.config.rng
     k = sim.config.selection.k
 
-    parents = Vector{Tuple{Int,Int}}(undef, parent_pairs)
+    parents = Vector{Tuple{Int,Int}}(undef, λ)
+    solutions = sim.population.solutions
 
-    for pair_index in 1:parent_pairs
-        indices = randperm(rng, parent_pairs)[1:k]
-        P1 = sort!(
-            indices;
-            by=index -> sim.population.solutions[index].fitness + sim.population.solutions[index].penalty
-        )[1]
+    for pair_index in 1:λ
+        indices = randperm(rng, μ)[1:k]
+        P1 = sort!(indices; by=i -> solutions[i].fitness + solutions[i].penalty)[1]
 
-        indices = filter!(i -> i != P1, randperm(rng, parent_pairs))[1:k]
-        P2 = sort!(
-            indices;
-            by=index -> sim.population.solutions[index].fitness + sim.population.solutions[index].penalty
-        )[1]
+        indices = filter!(i -> i != P1, randperm(rng, μ))[1:k]
+        P2 = sort!(indices; by=i -> solutions[i].fitness + solutions[i].penalty)[1]
         parents[pair_index] = (P1, P2)
     end
 
@@ -124,8 +120,10 @@ function binary_genetic_algorithm(
     end
 
     config.verbosity >= 1 && println("Final\tPopulation\n$(sim.population)")
-    solutions = sort!([decode(genotype) for genotype in sim.population.solutions]; by=sol -> sol.total_cost)
-    println(solutions)
+    println(
+        "Final Solutions:\n",
+        sort!([decode(genotype) for genotype in sim.population.solutions]; by=sol -> sol.total_cost)
+    )
 
     return sim
 end
