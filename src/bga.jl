@@ -111,6 +111,9 @@ function binary_genetic_algorithm(
         bga_crossover!(parents, sim)
         bga_mutation!(sim)
 
+        # heuristic improvement operator on the offspring, if enabled
+        heuristic_improvement_operator!(sim)
+
         # reproduction
         @assert !isnothing(sim.offspring) "offspring must be defined for reproduction to occur"
         bga_fitness!(sim)

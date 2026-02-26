@@ -33,18 +33,20 @@ struct BGAConfig
     initialisation::BGAInitialisationScheme
     selection::BGASelectionConfig
     reproduction::BGAReproductionScheme
+    heuristic_improvement::Bool
 end
 BGAConfig(;
     rng::Random.AbstractRNG=Random.default_rng(),
-    v::Int=1,
-    epochs::Int=10,
-    mu::Int=10,
-    lambda::Int=10,
-    penalty::Float64=1000.0,
+    v=1,
+    epochs=10,
+    mu=10,
+    lambda=10,
+    penalty=1000.0,
     initialisation::BGAInitialisationScheme=BGAUniformlyRandomInitialisation(),
     selection::BGASelectionConfig=BGASelectionConfig(),
-    reproduction::BGAReproductionScheme
-) = BGAConfig(rng, v, epochs, mu, lambda, penalty, initialisation, selection, reproduction)
+    reproduction::BGAReproductionScheme,
+    heuristic_improvement=false
+) = BGAConfig(rng, v, epochs, mu, lambda, penalty, initialisation, selection, reproduction, heuristic_improvement)
 
 # population
 mutable struct BGAPopulation

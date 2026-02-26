@@ -54,7 +54,8 @@ bga_improved_config = Assignment.BGAConfig(;
     reproduction=Assignment.BGAStochasticRankingReproduction(;
         N=lambda,
         P_f=0.5
-    )
+    ),
+    heuristic_improvement=true,
 )
 bga_improved_sim = Assignment.binary_genetic_algorithm(problem1; config=bga_improved_config)
 

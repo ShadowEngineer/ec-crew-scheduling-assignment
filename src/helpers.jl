@@ -57,8 +57,12 @@ function find_free_index(array::Vector{Int}, start_index::Int; max::Union{Int}=t
 end
 
 # paper [1]'s notation at the bottom of p323
-
-# all the column indices where there's a 1 in the given row
+"""
+all the column indices where there's a 1 in the given row
+"""
 alpha_i(problem::SetPartitioningProblem, row_index::Int) = findall(==(1), problem.partitions[row_index, :])
-# all the row indices where there's a 1 in the given column
+
+"""
+all the row indices where there's a 1 in the given column
+"""
 beta_j(problem::SetPartitioningProblem, column_index::Int) = findall(==(1), problem.partitions[:, column_index])
