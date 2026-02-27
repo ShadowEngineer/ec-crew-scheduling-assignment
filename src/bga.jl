@@ -92,16 +92,17 @@ function binary_genetic_algorithm(
     problem::SetPartitioningProblem;
     config::BGAConfig
 )
-    config.verbosity >= 1 && println("running for $(config.epochs) epochs...")
+    config.verbosity >= 1 && println("Running for $(config.epochs) epochs...")
 
     sim = BGASimulation(problem, config, nothing, nothing)
 
-    config.verbosity >= 1 && println("generating initial solutions...")
+    config.verbosity >= 1 && println("Generating initial solutions...")
     bga_initial_population!(sim, sim.config.initialisation)
     bga_fitness!(sim)
 
-    config.verbosity >= 2 && println("initial solutions\n$(sim.population)")
+    config.verbosity >= 2 && println("Initial population\n$(sim.population)")
 
+    highest_epoch = 0
     for epoch in 1:sim.config.epochs
         sim.config.verbosity >= 3 && println("Epoch-$epoch\tPopulation\n$(sim.population)")
 
@@ -120,13 +121,15 @@ function binary_genetic_algorithm(
         bga_reproduction!(sim, sim.config.reproduction)
 
         sim.offspring = nothing
+        highest_epoch += 1
     end
 
-    config.verbosity >= 1 && println("Final\tPopulation\n$(sim.population)")
-    println(
-        "Final Solutions:\n",
-        sort!([decode(genotype) for genotype in sim.population.solutions]; by=sol -> sol.total_cost)
-    )
+    config.verbosity >= 2 && println("Final population\n$(sim.population)")
 
-    return sim
+    solutions = sort!([decode(genotype) for genotype in sim.population.solutions]; by=sol -> sol.total_cost)
+    config.verbosity >= 1 && println("Final solutions:\n", solutions)
+
+    feasible_solutions = filter(sol::Solution -> sol.feasible, solutions)
+    isempty(feasible_solutions) && return RunResult(solutions[1], highest_epoch)
+    return RunResult(feasible_solutions[1], highest_epoch)
 end

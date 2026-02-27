@@ -86,6 +86,7 @@ function simulated_annealing(
     solution = generate_solution(problem, UniformlyRandom(rng))
     worst_neighbour_attempts = 0
 
+    highest_iteration = 0
     for iteration in 1:settings.iterations
         neighbour = sa_neighbour(solution, rng)
 
@@ -104,11 +105,12 @@ function simulated_annealing(
             worst_neighbour_attempts += 1
         end
 
+        highest_iteration += 1
         if settings.bailout.enabled && worst_neighbour_attempts > settings.bailout.max_attempts
             verbosity >= 1 && println("Exceeded neighbour jump attempts $(settings.bailout.max_attempts), bailing")
             break
         end
     end
 
-    return solution
+    return RunResult(solution, highest_iteration)
 end
