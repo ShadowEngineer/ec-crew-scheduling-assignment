@@ -2,20 +2,6 @@ include("bga/genotype.jl")
 include("bga/types.jl")
 include("bga/improvements.jl")
 
-function bga_reproduction!(sim::BGASimulation, ::BGAGenerationalReproduction)
-    @assert sim.config.population == sim.config.offspring "cannot produce a new generation of different size"
-    sim.population = sim.offspring
-end
-
-function bga_reproduction!(sim::BGASimulation, ::BGACombinedReproduction)
-    combined = sim.population + sim.offspring
-    sort!(combined.solutions; by=x -> x.fitness + x.penalty)
-    combined.solutions = combined.solutions[1:sim.config.population]
-
-    sim.population = combined
-end
-
-
 function bga_fitness!(sim::BGASimulation)
     for genotype in sim.population.solutions
         genotype.fitness = sa_fitness(genotype.solution)
@@ -88,6 +74,31 @@ function bga_mutation!(sim::BGASimulation)
     end
 end
 
+function bga_reproduction!(sim::BGASimulation, ::BGAGenerationalReproduction)
+    @assert sim.config.population == sim.config.offspring "cannot produce a new generation of different size"
+    sim.population = sim.offspring
+end
+
+function bga_reproduction!(sim::BGASimulation, ::BGACombinedReproduction)
+    combined = sim.population + sim.offspring
+    sort!(combined.solutions; by=x -> x.fitness + x.penalty)
+    combined.solutions = combined.solutions[1:sim.config.population]
+
+    sim.population = combined
+end
+
+"""
+Checks for early-returns by:
+1. Checking if all members of the population are the same (perfect convergence)
+"""
+function should_bailout(sim::BGASimulation)::Bool
+    first::BinaryGenotypeSolution = sim.population.solutions[1]
+    for i in 2:length(sim.population.solutions)
+        first.bitstring != sim.population.solutions[i].bitstring && return false
+    end
+    return true
+end
+
 function binary_genetic_algorithm(
     problem::SetPartitioningProblem;
     config::BGAConfig
@@ -122,6 +133,9 @@ function binary_genetic_algorithm(
 
         sim.offspring = nothing
         highest_epoch += 1
+
+        # early-returning to not waste compute time if not possible to continue
+        should_bailout(sim) && break
     end
 
     config.verbosity >= 2 && println("Final population\n$(sim.population)")

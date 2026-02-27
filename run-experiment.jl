@@ -6,7 +6,7 @@ using Base.Filesystem
 
 RUN_SA = true
 RUN_BGA = true
-RUN_IBGA = false
+RUN_IBGA = true
 
 problems = [
     Assignment.read_data_file("data/sppnw41.txt"),
@@ -23,7 +23,8 @@ function save_sols(solutions::Dict{String,Vector{Assignment.RunResult}}, algname
     previous_files = filter(f -> isfile(f) && endswith(f, ".jld2") && contains(f, "-$algname-"), readdir(pwd()))
     filename = "solutions-$algname-latest.jld2"
     if length(previous_files) > 0
-        rename(filename, "solutions-$algname-$(length(previous_files)).jld2")
+        next_file_number = maximum(map(s -> Int(split(s, "-")[3]), previous_files)) + 1
+        rename(filename, "solutions-$algname-$(next_file_number).jld2")
     end
 
     println("Saving to: $filename")
@@ -118,7 +119,7 @@ if RUN_IBGA
                 penalty=penalty,
                 initialisation=Assignment.BGAPseudoRandomInitialisation(),
                 selection=Assignment.BGASelectionConfig(; k=2),
-                reproduction=Assignment.BGAStochasticRankingReproduction(; N=lambda, P_f=0.5),
+                reproduction=Assignment.BGAStochasticRankingReproduction(; N=λ, P_f=0.5),
                 heuristic_improvement=true,
             )
             result = Assignment.binary_genetic_algorithm(problem; config=config)
