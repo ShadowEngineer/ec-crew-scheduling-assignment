@@ -23,7 +23,12 @@ function save_sols(solutions::Dict{String,Vector{Assignment.RunResult}}, algname
     previous_files = filter(f -> isfile(f) && endswith(f, ".jld2") && contains(f, "-$algname-"), readdir(pwd()))
     filename = "solutions-$algname-latest.jld2"
     if length(previous_files) > 0
-        next_file_number = maximum(map(s -> Int(split(s, "-")[3]), previous_files)) + 1
+        previous_files = filter(f -> !contains(f, "latest"), previous_files)
+        if length(previous_files) == 0
+            next_file_number = 1
+        else
+            next_file_number = maximum(map(s -> parse(Int, split(s, "-")[3]), previous_files)) + 1
+        end
         rename(filename, "solutions-$algname-$(next_file_number).jld2")
     end
 
@@ -51,7 +56,7 @@ if RUN_SA
                     alpha=0.99,
                 ),
                 bailout=Assignment.SABailoutConfig(
-                    enabled=true,
+                    enabled=false,
                     max_attempts=10
                 ),
                 normalised=true
@@ -71,7 +76,7 @@ if RUN_SA
 end
 
 # binary genetic algorithm
-μ = 50
+μ = 100
 λ = 2μ
 epochs = 1000
 penalty = 10000.0

@@ -27,6 +27,8 @@ using Assignment
         @testset "adheres to max bound by index and value" begin
             @test Assignment.find_free_index([2, 3, 4, 5], 4; max=5) == (1, 1)
             @test Assignment.find_free_index([1, 2, 3, 4], 1; max=5) == (5, 5)
+            @test Assignment.find_free_index([10], 1; max=10) == (1, 9)
+            @test Assignment.find_free_index([1, 2, 3, 4, 5, 10], 2; max=10) == (6, 6)
         end
 
         @testset "full arrays" begin

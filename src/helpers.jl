@@ -13,47 +13,68 @@ If both bound searches complete, an error is thrown stating that the array is fu
 - Returns the tuple (4, 5), corresponding to (index, value) of the closest free space that you could insert to.
 """
 function find_free_index(array::Vector{Int}, start_index::Int; max::Union{Int}=typemax(Int))::Tuple{Int,Int}
-    @assert length(array) > 0 "Array must have elements in it!"
+    array_length = length(array)
+    @assert array_length > 0 "Array must have elements in it!"
+    @assert array_length < max "Array is full. No free next index after limit of $max"
     @assert issorted(array) "Array must be sorted!"
     @assert start_index >= 1 "Start index must be a non-negative, non-zero index!"
-    @assert start_index <= length(array) "Start index must be inside the array!"
+    @assert start_index <= array_length "Start index must be inside the array!"
 
     start_value = array[start_index]
     lower = start_index - 1
     upper = start_index + 1
-    searching_down = true
-    searching_up = true
 
     array_max = array[end] # can assume this since the array is sorted
     can_insert_up = array_max < max
 
-    while searching_down || searching_up
-        if lower >= 1
+    # finding lower bound
+    lower_option = (0, 0)
+    while true
+        if lower >= 0
             expected_lower_value = start_value - (start_index - lower)
-            if array[lower] < expected_lower_value
-                return (lower + 1, expected_lower_value)
+            if lower == 0 || (lower >= 1 && array[lower] < expected_lower_value)
+                lower_option = (lower + 1, expected_lower_value)
+                break
             end
             lower -= 1
         else
-            searching_down = false
+            break
         end
+    end
 
-        if upper <= length(array) && upper <= max && array[upper] <= max
+    upper_option = (array_length + 1, max)
+    while true
+        if upper <= array_length && upper <= max && array[upper] <= max
             expected_upper_value = start_value + (upper - start_index)
             if array[upper] > expected_upper_value
-                return (upper, expected_upper_value)
+                upper_option = (upper, expected_upper_value)
+                break
             end
             upper += 1
         else
             # special cases
-            if upper > length(array) && can_insert_up
-                return (upper, array_max + 1)
+            if upper > array_length && can_insert_up
+                upper_option = (upper, array_max + 1)
             end
-            searching_up = false
+            break
         end
     end
 
-    error("Array is full. No free next index after limit of $max")
+    lower_is_valid = all(lower_option .> 0)
+    upper_is_valid = can_insert_up || upper_option[2] < max
+    if lower_is_valid && upper_is_valid
+        lower_distance = start_index - lower
+        upper_distance = upper - start_index
+        if lower_distance <= upper_distance
+            return lower_option
+        else
+            return upper_option
+        end
+    elseif lower_is_valid
+        return lower_option
+    else
+        return upper_option
+    end
 end
 
 # paper [1]'s notation at the bottom of p323

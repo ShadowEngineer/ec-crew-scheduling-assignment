@@ -55,17 +55,17 @@ df_sa = solutions_to_df(sa_solutions)
 # ╔═╡ 56c0a9bf-01a3-41de-aeb3-7d36a61c855a
 df_bga = solutions_to_df(bga_solutions)
 
-# ╔═╡ 67662b2a-808f-4424-8a59-b735814a8005
-df_bga[df_bga.feasible, :]
-
 # ╔═╡ 2f4b65d2-a82c-4ac4-b17b-8c6e401aaae7
 df_ibga = solutions_to_df(ibga_solutions)
+
+# ╔═╡ 9a415841-48d2-4f83-8278-dc9fdadbcc96
+combine(groupby(filter(r -> r.feasible && r.problem=="data/sppnw42.txt", df_ibga), :total_cost; sort=true), nrow)
 
 # ╔═╡ 3075ed6b-67f0-4d44-ba1f-e01758f46c8e
 filter(
 	[:problem, :feasible, :total_cost] =>
-		(p, f, c) -> p == "data/sppnw41.txt" && f && c == 11307,
-	df_ibga
+		(p, f, c) -> p == "data/sppnw43.txt" && f && c == 14792,
+	df_bga
 )
 
 # ╔═╡ d00afeb6-6695-4d9c-9f19-bc19d36c3362
@@ -122,7 +122,7 @@ df_ibga_analysed = analyse_runs(df_ibga)
 # ╔═╡ 9392f593-ad37-45ed-9a7e-917610dff502
 function save_to_markdown_table_file(df, identifier)
 	open("results-$identifier.md", "w") do io
-		pretty_table(io, df, backend=:markdown, alignment=:c, formatters=[fmt__printf("%5.2f")])
+		pretty_table(io, df, backend=:markdown, alignment=[:l,:r,:r,:r], formatters=[fmt__printf("%5.2f")])
 	end
 end
 
@@ -146,8 +146,8 @@ save_to_markdown_table_file(df_ibga_analysed, "ibga")
 # ╠═e0427619-2006-4644-9f47-be8a3461fad7
 # ╠═fcc65c81-b3b8-4fb0-bddd-641a3fade42a
 # ╠═56c0a9bf-01a3-41de-aeb3-7d36a61c855a
-# ╠═67662b2a-808f-4424-8a59-b735814a8005
 # ╠═2f4b65d2-a82c-4ac4-b17b-8c6e401aaae7
+# ╠═9a415841-48d2-4f83-8278-dc9fdadbcc96
 # ╠═3075ed6b-67f0-4d44-ba1f-e01758f46c8e
 # ╠═abea3b54-bebb-4723-ac69-47b5023e4673
 # ╠═d00afeb6-6695-4d9c-9f19-bc19d36c3362
