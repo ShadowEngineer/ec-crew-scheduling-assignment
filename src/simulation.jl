@@ -22,9 +22,9 @@ end
 function run_experiment(; run_sa=false, run_bga=false, run_ibga=false)
 
     problems = [
-        read_data_file("data/sppnw41.txt"),
-        read_data_file("data/sppnw42.txt"),
-        read_data_file("data/sppnw43.txt")
+        read_data_file(pkgdir(Assignment, "data", "sppnw41.txt")),
+        read_data_file(pkgdir(Assignment, "data", "sppnw42.txt")),
+        read_data_file(pkgdir(Assignment, "data", "sppnw43.txt"))
     ]
 
     seeds = [Random.Xoshiro(10i) for i in 1:30]
