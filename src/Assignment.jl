@@ -10,4 +10,6 @@ include("result.jl")
 include("simulated-annealing.jl")
 include("bga.jl")
 
+include("simulation.jl")
+
 end
